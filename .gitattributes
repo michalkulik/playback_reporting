@@ -1,0 +1,17 @@
+# Shell scripts must keep LF endings so they run in Linux CI.
+*.sh text eol=lf
+
+# Normalize text files, keep Windows batch files native.
+*.cs   text
+*.csproj text
+*.json text
+*.md   text
+*.yml  text
+*.js   text
+*.html text
+*.py   text
+*.sln  text eol=crlf
+*.bat  text eol=crlf
+
+*.png  binary
+*.zip  binary

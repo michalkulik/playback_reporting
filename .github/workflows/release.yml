@@ -1,0 +1,77 @@
+name: Release Plugin
+
+# Pushing a tag like v3.0.0.0 builds the plugin for both supported ABIs, attaches
+# the zips to a GitHub Release and refreshes manifest.json with the matching
+# checksums, so the repository URL can be added straight to Jellyfin.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build (e.g. v3.0.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: "Setup .NET"
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: "Build packages"
+        run: |
+          chmod +x build.sh
+          ./build.sh net9.0
+          ./build.sh net10.0
+
+      - name: "Publish GitHub Release"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: dist/*.zip
+          generate_release_notes: true
+
+      - name: "Update manifest.json"
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          for TFM in net9.0 net10.0; do
+            case "$TFM" in
+              net9.0)  ABI="10.11.0.0" ;;
+              net10.0) ABI="12.0.0.0" ;;
+            esac
+            ZIP=$(ls dist/*-"$TFM".zip | head -1)
+            python3 tools/update-manifest.py \
+              --manifest manifest.json \
+              --zip "$ZIP" \
+              --repo "$GITHUB_REPOSITORY" \
+              --tag "$TAG" \
+              --tfm "$TFM" \
+              --target-abi "$ABI" \
+              --changelog "Jellyfin 10.11 and 12 support"
+          done
+
+      - name: "Commit manifest.json"
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          if git diff --cached --quiet; then
+            echo "manifest.json already up to date"
+          else
+            git commit -m "Update plugin manifest for ${{ github.event.inputs.tag || github.ref_name }}"
+            git push origin HEAD:${{ github.event.repository.default_branch }}
+          fi

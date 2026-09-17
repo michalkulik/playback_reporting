@@ -222,3 +222,10 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#################
+## .NET / build output
+#################
+obj/
+dist/
+*.zip

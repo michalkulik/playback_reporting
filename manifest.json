@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "9e6eb40f-9a1a-4ca1-a299-62b4d252453e",
+    "name": "Playback Reporting",
+    "description": "Show reports for playback activity",
+    "overview": "Collect and show user play statistics",
+    "owner": "michalkulik",
+    "category": "Administration",
+    "versions": []
+  }
+]
