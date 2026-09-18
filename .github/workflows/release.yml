@@ -39,24 +39,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
-          echo "Publishing release for tag: $TAG"
-          ls -l dist
+          echo "Repository : $REPO"
+          echo "Tag        : $TAG"
+          gh --version
+
+          shopt -s nullglob
+          PACKAGES=(dist/*.zip)
+          shopt -u nullglob
+
+          if [ "${#PACKAGES[@]}" -eq 0 ]; then
+            echo "::error::No packages found in dist/, nothing to release"
+            exit 1
+          fi
+          echo "Packages to upload:"
+          printf '  %s\n' "${PACKAGES[@]}"
 
           # Create the release if it does not exist yet. Idempotent, so re-runs work.
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$REPO" --title "$TAG" --generate-notes --verify-tag
           fi
 
           # Upload (or replace) the packages. The asset upload endpoint is
           # occasionally flaky, so retry a few times before giving up.
           attempt=1
-          while true; do
-            if gh release upload "$TAG" dist/*.zip --clobber; then
-              break
-            fi
+          until gh release upload "$TAG" "${PACKAGES[@]}" --repo "$REPO" --clobber; do
             if [ "$attempt" -ge 5 ]; then
               echo "::error::Failed to upload release assets after $attempt attempts"
               exit 1
@@ -66,8 +76,22 @@ jobs:
             attempt=$((attempt + 1))
           done
 
-          echo "Release assets:"
-          gh release view "$TAG" --json tagName,url,assets
+          # Never report success unless every package is attached to the release:
+          # a silently skipped upload would leave Jellyfin with a manifest that
+          # points at a 404.
+          ASSETS=$(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name')
+          echo "Assets currently attached to the release:"
+          echo "$ASSETS"
+
+          status=0
+          for pkg in "${PACKAGES[@]}"; do
+            name=$(basename "$pkg")
+            if ! grep -qx "$name" <<< "$ASSETS"; then
+              echo "::error::Asset $name is missing from the release"
+              status=1
+            fi
+          done
+          exit $status
 
       - name: "Update manifest.json"
         env:
