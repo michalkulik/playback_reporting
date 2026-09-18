@@ -59,6 +59,26 @@ Date.daysBetween = function (date1, date2) {
     return Math.round((date2.getTime() - date1.getTime()) / one_day);
 };
 
+// Jellyfin 12 has no RequireJS, so Chart.js is loaded with a plain script tag.
+function loadChart(callback) {
+    if (window.Chart) {
+        callback();
+        return;
+    }
+
+    var existing = document.querySelector('script[data-playback-reporting-chart]');
+    if (existing) {
+        existing.addEventListener('load', callback);
+        return;
+    }
+
+    var script = document.createElement('script');
+    script.src = Dashboard.getConfigurationResourceUrl('chart.min.js');
+    script.setAttribute('data-playback-reporting-chart', '1');
+    script.addEventListener('load', callback);
+    document.head.appendChild(script);
+}
+
     var daily_bar_chart = null;
     var hourly_bar_chart = null;
     var weekly_bar_chart = null;
@@ -398,7 +418,7 @@ export default function (view, params) {
 
             LibraryMenu.setTabs("hourly_usage_report", getTabIndex("hourly_usage_report"), getTabs);
 
-            require([Dashboard.getConfigurationResourceUrl('chart.min.js')], function (d3) {
+            loadChart(function () {
 
                 var user_name = "";
                 var user_name_index = window.location.href.indexOf("user=");
@@ -508,7 +528,7 @@ export default function (view, params) {
                         ApiClient.getUserActivity(url).then(function (usage_data) {
                             load_status.innerHTML = "&nbsp;";
                             //alert("Loaded Data: " + JSON.stringify(usage_data));
-                            draw_graph(view, d3, usage_data);
+                            draw_graph(view, window.Chart, usage_data);
                         }, function (response) { load_status.innerHTML = response.status + ":" + response.statusText; });
                     }
                 }, function (response) { load_status.innerHTML = response.status + ":" + response.statusText; });

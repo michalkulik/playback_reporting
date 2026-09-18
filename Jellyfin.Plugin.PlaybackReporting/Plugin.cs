@@ -137,11 +137,6 @@ namespace Jellyfin.Plugin.PlaybackReporting
                 {
                     Name = "played.js",
                     EmbeddedResourcePath = GetType().Namespace + ".Pages.played.js"
-                },
-                new PluginPageInfo
-                {
-                    Name = "helper_function.js",
-                    EmbeddedResourcePath = GetType().Namespace + ".Pages.helper_function.js"
                 }
             };
         }

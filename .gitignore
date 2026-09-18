@@ -229,3 +229,5 @@ pip-log.txt
 obj/
 dist/
 *.zip
+
+tools/page-harness/_generated/

@@ -230,6 +230,28 @@ Weryfikacja: `dotnet build -c Release` dla `net9.0` i `net10.0` — **0 błędó
 Pakowanie (`build.sh`) i aktualizacja manifestu przetestowane lokalnie (zip zawiera
 `Jellyfin.Plugin.PlaybackReporting.dll` + `SQLitePCL.pretty.dll`, MD5 zgodny).
 
+### 9.1. Poprawki po instalacji na Jellyfin 12.1.0 (wersja 3.0.0.2)
+
+Pierwsze uruchomienie na serwerze 12.1.0 wykazało, że **backend działał**, ale strony
+nie doładowywały danych („Loading Data...”, puste tabele). Przyczyna leżała w web-API,
+które Jellyfin 12 **usunął**, a których używały oryginalne strony Emby:
+
+| Usunięte w Jellyfin 12 | Skutek | Poprawka |
+| --- | --- | --- |
+| `require([...])` (RequireJS) | `ReferenceError: require is not defined` — handler `viewshow` przerywał się przed pobraniem danych | własny `loadChart()` wstrzykujący `chart.min.js` jako zwykły `<script>` (4 strony) |
+| `require(['directorybrowser'])` | brak wyboru folderu/pliku | `window.prompt` na ścieżkę (2 miejsca) |
+| `Dashboard.getConfigurationPageUrl()` | `TypeError` w callbacku pobierania → puste tabele | lokalny `getConfigurationPageUrl()` (już był w prelude) |
+| parametr `d3` z callbacku RequireJS | `ReferenceError: d3 is not defined` | `window.Chart` (funkcje rysujące i tak używają globalnego `Chart`) |
+| `data-require` (custom elements) | brak upgrade'u `emby-*` | nie blokuje działania (elementy natywne); do rozważenia kosmetycznie |
+
+Dodatkowo usunięto martwy `helper_function.js` (nie ładowany przez nic; oficjalny port
+Jellyfin również go nie ma).
+
+Weryfikacja: `tools/page-harness` — harness uruchamia każdą stronę w prawdziwej
+przeglądarce z zaślepkami globali Jellyfin. Wynik dla wszystkich 9 stron:
+**0 błędów**, poprawne wywołania API, `Chart` załadowany tam, gdzie potrzebny,
+statusy „Loading Data...” czyszczone.
+
 Do zrobienia po stronie użytkownika / dalsze kroki:
 1. Testy runtime na serwerze Jellyfin 12.x (ładowanie wtyczki, zakładka w kokpicie, wszystkie raporty).
 2. Utworzenie repo GitHub `michalkulik/playback_reporting`, push i tag `v3.0.0.0` → workflow opublikuje

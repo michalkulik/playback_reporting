@@ -599,31 +599,19 @@ export default function (view, params) {
             }
 
             function loadBackupDataPicker() {
-                require(['directorybrowser'], function (directoryBrowser) {
-                    var picker = new directoryBrowser();
-                    picker.show({
-                        includeFiles: true,
-                        callback: function (selected) {
-                            picker.close();
-                            loadBackupFile(selected, view);
-                        },
-                        header: "Select backup file to load"
-                    });
-                });
+                // Jellyfin 12 no longer provides the RequireJS directorybrowser module.
+                var selected = window.prompt("Full path of the backup file on the server:", "");
+                if (selected) {
+                    loadBackupFile(selected, view);
+                }
             }
 
             function setBackupPathPicker() {
-                require(['directorybrowser'], function (directoryBrowser) {
-                    var picker = new directoryBrowser();
-                    picker.show({
-                        includeFiles: false,
-                        callback: function (selected) {
-                            picker.close();
-                            setBackupPathCallBack(selected, view);
-                        },
-                        header: "Select backup path"
-                    });
-                });
+                // Jellyfin 12 no longer provides the RequireJS directorybrowser module.
+                var selected = window.prompt("Full path of the backup directory on the server:", "");
+                if (selected) {
+                    setBackupPathCallBack(selected, view);
+                }
             }
 
             // remove unknown users button

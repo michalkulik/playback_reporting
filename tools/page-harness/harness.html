@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Playback Reporting page harness</title>
+</head>
+<body>
+    <div id="host"></div>
+    <script>
+        // Minimal stand-ins for the Jellyfin 12 web globals, so each plugin page
+        // module can be executed outside a real server.
+        window.__errors = [];
+        window.__calls = [];
+
+        window.addEventListener('error', function (e) {
+            window.__errors.push('window.error: ' + e.message);
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            window.__errors.push('unhandledrejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+        });
+
+        function jsonFor(url) {
+            if (url.indexOf('session_list') > -1) {
+                return [{ user_id: 'a', user_name: 'u', device_name: 'd', client_name: 'c', app_version: '1', has_image: false }];
+            }
+            if (url.indexOf('type_filter_list') > -1) {
+                return ['Movie', 'Episode'];
+            }
+            if (url.indexOf('user_list') > -1) {
+                return [{ name: 'admin', id: 'b', in_list: false }];
+            }
+            if (url.indexOf('user_activity') > -1) {
+                return [{ user_id: 'b', user_name: 'admin', last_seen: 'now', total_play_time: '< 1m', has_image: false }];
+            }
+            if (/GetItems/.test(url)) {
+                return { has_image: false, user_name: 'admin', user_id: 'b', activity: [] };
+            }
+            if (/BreakdownReport/.test(url)) {
+                return [{ label: 'Movie', value: 1, time: 60 }];
+            }
+            if (/HourlyReport/.test(url)) {
+                return {};
+            }
+            if (/PlayActivity/.test(url)) {
+                return [{ user_id: 'b', user_name: 'admin', user_usage: { '2026-09-18': 1 } }];
+            }
+            if (/UserPlaylist/.test(url)) {
+                return [];
+            }
+            if (/get_item_path|get_item_stats|get_items|submit_custom_query/.test(url)) {
+                return [];
+            }
+            return [];
+        }
+
+        function pluginConfig() {
+            return {
+                MaxDataAge: 3,
+                BackupPath: '',
+                MaxBackupFiles: 5,
+                ActivityPlaylists: [],
+                ColourPalette: [],
+                CustomQueries: [],
+                IgnoreSmallerThan: 0
+            };
+        }
+
+        window.ApiClient = {
+            _serverInfo: { Id: 'srv' },
+            getUrl: function (path, params) { return '/' + path; },
+            ajax: function (opts) {
+                var url = (opts && opts.url) || '';
+                window.__calls.push(url);
+                return Promise.resolve(jsonFor(url));
+            },
+            getNamedConfiguration: function () { return Promise.resolve(pluginConfig()); },
+            updateNamedConfiguration: function () { return Promise.resolve(); }
+        };
+
+        window.Dashboard = {
+            getConfigurationResourceUrl: function (name) { return '/chart.min.js'; },
+            getPluginUrl: function (name) { return 'configurationpage?name=' + encodeURIComponent(name); },
+            navigate: function () { },
+            showLoadingMsg: function () { },
+            hideLoadingMsg: function () { },
+            processPluginConfigurationUpdateResult: function () { },
+            alert: function () { },
+            confirm: function () { }
+        };
+
+        window.LibraryMenu = { setTabs: function () { } };
+
+        // Deliberately NOT defining window.require: Jellyfin 12 has no RequireJS,
+        // so any remaining AMD usage must surface as an error.
+
+        window.__runPage = function (name) {
+            return fetch(name + '.html')
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
+                    var view = doc.body.firstElementChild;
+                    document.getElementById('host').appendChild(document.importNode(view, true));
+                    var viewEl = document.getElementById('host').firstElementChild;
+
+                    return import('./' + name + '.js').then(function (mod) {
+                        var factory = mod.default || mod;
+                        if (typeof factory !== 'function') {
+                            window.__errors.push('module has no default export function');
+                            return;
+                        }
+                        factory(viewEl, {});
+                        viewEl.dispatchEvent(new Event('viewshow'));
+                    });
+                })
+                .catch(function (e) {
+                    window.__errors.push('load: ' + (e && e.message ? e.message : e));
+                });
+        };
+
+        window.__waitFor = function (ms) {
+            return new Promise(function (res) { setTimeout(res, ms); });
+        };
+    </script>
+</body>
+</html>

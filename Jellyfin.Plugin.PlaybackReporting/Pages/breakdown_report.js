@@ -59,6 +59,26 @@ Date.daysBetween = function (date1, date2) {
     return Math.round((date2.getTime() - date1.getTime()) / one_day);
 };
 
+// Jellyfin 12 has no RequireJS, so Chart.js is loaded with a plain script tag.
+function loadChart(callback) {
+    if (window.Chart) {
+        callback();
+        return;
+    }
+
+    var existing = document.querySelector('script[data-playback-reporting-chart]');
+    if (existing) {
+        existing.addEventListener('load', callback);
+        return;
+    }
+
+    var script = document.createElement('script');
+    script.src = Dashboard.getConfigurationResourceUrl('chart.min.js');
+    script.setAttribute('data-playback-reporting-chart', '1');
+    script.addEventListener('load', callback);
+    document.head.appendChild(script);
+}
+
     var chart_instance_map = {};
     var color_list = [];
 
@@ -94,7 +114,7 @@ Date.daysBetween = function (date1, date2) {
                 encoded_uri = encoded_uri.replace("\"", "%22");
                 console.log(filter_name)
                 console.log(encoded_uri)
-                var summary_url = Dashboard.getConfigurationPageUrl('user_play_report') + "&filter_name=" + encoded_uri;
+                var summary_url = getConfigurationPageUrl('user_play_report') + "&filter_name=" + encoded_uri;
                 label_data = "<a href='" + summary_url + "' is='emby-linkbutton' style='padding: 0px;font-weight:normal;' title='" + chart.data.labels[i] + "'>" + chart.data.labels[i] + "</a>";
             }
             legendHtml.push('<td style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + label_data + '</td>');
@@ -126,7 +146,7 @@ Date.daysBetween = function (date1, date2) {
                 lable_title_value = lable_title_value.replace("'", "%27");
                 lable_title_value = lable_title_value.replace("\"", "%22");
 
-                var summary_url = Dashboard.getConfigurationPageUrl('user_play_report') + "&filter_name=" + encoded_uri;
+                var summary_url = getConfigurationPageUrl('user_play_report') + "&filter_name=" + encoded_uri;
                 label_data = "<a href='" + summary_url + "' is='emby-linkbutton' style='padding: 0px;font-weight:normal;' title='" + lable_title_value + "'>" + chart.data.labels[i] + "</a>";
             }
             legendHtml.push('<td style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + label_data + '</td>');
@@ -328,7 +348,7 @@ export default function (view, params) {
 
             LibraryMenu.setTabs("breakdown_report", getTabIndex("breakdown_report"), getTabs);
 
-            require([Dashboard.getConfigurationResourceUrl('chart.min.js')], function (d3) {
+            loadChart(function () {
 
                 var user_name = "";
                 var user_name_index = window.location.href.indexOf("user=");
@@ -419,7 +439,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "User", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "User", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
                     
                     // build ItemType chart
@@ -428,7 +448,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "ItemType", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "ItemType", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
 
                     // build PlaybackMethod chart
@@ -437,7 +457,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "PlayMethod", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "PlayMethod", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
 
                     // build ClientName chart
@@ -446,7 +466,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "ClientName", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "ClientName", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
 
                     // build DeviceName chart
@@ -455,7 +475,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "DeviceName", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "DeviceName", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
 
                     // build TvShows chart
@@ -464,7 +484,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "TvShows", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "TvShows", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
 
                     // build Movies chart
@@ -473,7 +493,7 @@ export default function (view, params) {
                     ApiClient.getUserActivity(url).then(function (data) {
                         if (++load_count === 7) { load_status.innerHTML = "&nbsp;"; }
                         //alert("Loaded Data: " + JSON.stringify(usage_data));
-                        draw_chart_user_count(view, d3, data, "Movies", item_count, add_other_line);
+                        draw_chart_user_count(view, window.Chart, data, "Movies", item_count, add_other_line);
                     }, function (response) { load_count = -100; load_status.innerHTML = response.status + ":" + response.statusText; });
                 }
             });

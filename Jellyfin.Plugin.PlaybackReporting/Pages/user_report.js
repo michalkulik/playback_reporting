@@ -124,15 +124,15 @@ export default function (view, params) {
 
                         row_html += "<tr style='background:" + row_bg_col + ";'>";
 
-                        var summary_url = Dashboard.getConfigurationPageUrl('user_play_report') + "&user=" + encodeURI(user_info.user_name);
+                        var summary_url = getConfigurationPageUrl('user_play_report') + "&user=" + encodeURI(user_info.user_name);
                         var summary_link = "<a is='emby-linkbutton' style='padding: 1px;' href='" + summary_url + "' title='Summary'>" +
                             "<i class='md-icon largeIcon'>view_list</i></a>";
 
-                        var breakdown_url = Dashboard.getConfigurationPageUrl('breakdown_report') + "&user=" + encodeURI(user_info.user_name);
+                        var breakdown_url = getConfigurationPageUrl('breakdown_report') + "&user=" + encodeURI(user_info.user_name);
                         var breakdown_link = "<a is='emby-linkbutton' style='padding: 1px;' href='" + breakdown_url + "' title='Breakdown'>" +
                             "<i class='md-icon largeIcon'>pie_chart</i></a>";
                         
-                        var time_url = Dashboard.getConfigurationPageUrl('hourly_usage_report') + "&user=" + encodeURI(user_info.user_name);
+                        var time_url = getConfigurationPageUrl('hourly_usage_report') + "&user=" + encodeURI(user_info.user_name);
                         var time_link = "<a is='emby-linkbutton' style='padding: 1px;' href='" + time_url + "' title='Time'>" +
                             "<i class='md-icon largeIcon'>access_time</i></a>";
 
