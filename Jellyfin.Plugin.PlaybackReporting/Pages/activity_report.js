@@ -127,7 +127,7 @@ export default function (view, params) {
                         row_html += "<tr style='background:" + row_bg_col + ";'>";
 
                         // add user info
-                        var user_image = "<i class='md-icon' style='font-size:30px;'></i>";
+                        var user_image = "<span class='material-icons' style='font-size:30px;width:30px;height:30px;'>person</span>";
                         if (activity_info.has_image) {
                             var user_img = "Users/" + activity_info.user_id + "/Images/Primary?height=152&&quality=90";
                             user_img = ApiClient.getUrl(user_img);
@@ -146,12 +146,8 @@ export default function (view, params) {
                         row_html += "<td>";
                         row_html += "<table style='line-height: 1; font-size: 80%;'>";
                         row_html += "<tr>";
-                        if (activity_info.app_icon) {
-                            row_html += "<td rowspan='2'><img src='" + activity_info.app_icon + "' width='30px'></td>";
-                        }
-                        else {
-                            row_html += "<td rowspan='2'><img src='' width='30px'></td>";
-                        }
+                        // Jellyfin does not expose a client/app icon for sessions.
+                        row_html += "<td rowspan='2'><span class='material-icons' style='font-size:30px;'>devices</span></td>";
                         row_html += "<td>" + activity_info.device_name + "</td>";
                         row_html += "</tr>";
                         row_html += "<tr>";
@@ -184,7 +180,7 @@ export default function (view, params) {
                             var item_link = "<a href='" + name_link + "' is='emby-linkbutton' class='button-link' title='View Emby item'>" + item_name + "</a>";
 
                             var direct_name_link = "/web/index.html#!/item?id=" + activity_info.NowPlayingItem.Id + "&serverId=" + ApiClient._serverInfo.Id;
-                            var new_window = "<i class='md-icon' style='cursor: pointer; font-size:100%;' onClick='window.open(\"" + direct_name_link + "\");' title='Open Emby item in new window'>launch</i>"
+                            var new_window = "<span class='material-icons' style='cursor: pointer; font-size:24px;' onClick='window.open(\"" + direct_name_link + "\");' title='Open item in new window'>launch</span>"
 
                             var item_name_link = item_link + "&nbsp;&nbsp;" + new_window;
 

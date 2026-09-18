@@ -397,7 +397,7 @@ function loadChart(callback) {
 
         //console.log("Processing User Report: " + JSON.stringify(usage_data));
 
-        var user_image = "<i class='md-icon' style='font-size:30px;width:30px;height:30px;'></i>";
+            var user_image = "<span class='material-icons' style='font-size:30px;width:30px;height:30px;'>person</span>";
         if (user_details.has_image) {
             var user_img = "Users/" + user_id + "/Images/Primary?height=152&&quality=90";
             user_img = ApiClient.getUrl(user_img);
@@ -432,7 +432,7 @@ function loadChart(callback) {
             var item_link = "<a href='" + name_link + "' is='emby-linkbutton' class='button-link' title='View Emby item'>" + item_details.Name + "</a>";
 
             var direct_name_link = "/web/index.html#!/item?id=" + item_details.Id + "&serverId=" + ApiClient._serverInfo.Id;
-            var new_window = "<i class='md-icon' style='cursor: pointer; font-size:100%;' onClick='window.open(\"" + direct_name_link + "\");' title='Open Emby item in new window'>launch</i>"
+            var new_window = "<span class='material-icons' style='cursor: pointer; font-size:24px;' onClick='window.open(\"" + direct_name_link + "\");' title='Open item in new window'>launch</span>"
 
             row_html += "<td>" + item_link + "&nbsp;&nbsp;" + new_window + "</td>";
 
@@ -443,7 +443,7 @@ function loadChart(callback) {
             row_html += "<td>" + seconds2time(item_details.Duration) + "</td>";
 
             var but_id = "del_but_row_" + item_details.RowId
-            var del_link = "<i class='md-icon largeIcon' style='cursor: pointer;font-size:150%;' id='" + but_id + "' title='Delete this entry'>delete</i>"
+            var del_link = "<span class='material-icons' style='cursor: pointer;font-size:24px;' id='" + but_id + "' title='Delete this entry'>delete</span>"
             row_html += "<td>" + del_link + "</td>";
 
             row_html += "</tr>";

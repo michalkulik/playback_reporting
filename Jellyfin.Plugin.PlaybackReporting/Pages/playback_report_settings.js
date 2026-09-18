@@ -176,7 +176,7 @@ Date.daysBetween = function (date1, date2) {
             td.style.cssText = "padding-left: 20px; padding-right: 20px;";
             var btn = document.createElement("BUTTON");
             var i = document.createElement("i");
-            i.className = "md-icon";
+            i.className = "material-icons";
             var t = document.createTextNode("remove");
             i.appendChild(t);
             btn.appendChild(i);
@@ -186,7 +186,7 @@ Date.daysBetween = function (date1, date2) {
 
             btn = document.createElement("BUTTON");
             i = document.createElement("i");
-            i.className = "md-icon";
+            i.className = "material-icons";
             t = document.createTextNode("edit");
             i.appendChild(t);
             btn.appendChild(i);
@@ -264,8 +264,8 @@ Date.daysBetween = function (date1, date2) {
                     li_span.appendChild(document.createTextNode(item_details.name + " "));
                     var del_icon = document.createElement("i");
                     del_icon.title = "Remove ignored user";
-                    del_icon.className = "md-icon";
-                    del_icon.style = "cursor: pointer;font-size:100%;";
+                    del_icon.className = "material-icons";
+                    del_icon.style = "cursor: pointer;font-size:24px;";
                     var icon_name = document.createTextNode("delete");
                     del_icon.appendChild(icon_name);
                     del_icon.addEventListener("click", function () { removeIgnoredUser(view, item_details.id); });

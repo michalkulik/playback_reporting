@@ -109,7 +109,7 @@ Date.daysBetween = function (date1, date2) {
 
                     if (played) {
                         var i = document.createElement("i");
-                        i.className = "md-icon";
+                        i.className = "material-icons";
                         i.style.fontSize = "25px";
                         i.style.color = "#00FF00";
                         i.appendChild(document.createTextNode("check_circle_outline"));
@@ -118,7 +118,7 @@ Date.daysBetween = function (date1, date2) {
                     }
                     else {
                         var i = document.createElement("i");
-                        i.className = "md-icon";
+                        i.className = "material-icons";
                         i.style.fontSize = "25px";
                         i.style.color = "grey";
                         i.appendChild(document.createTextNode("highlight_off"));

@@ -221,7 +221,7 @@ export default function (view, params) {
 
                         row_html += "<td style='width:30px;'>&nbsp;</td>"
 
-                        var user_image = "<i class='md-icon' style='font-size:30px;width:30px;height:30px;'></i>";
+                        var user_image = "<span class='material-icons' style='font-size:30px;width:30px;height:30px;'>person</span>";
                         if (item_details.user_has_image) {
                             var user_img = "Users/" + item_details.user_id + "/Images/Primary?height=152&&quality=90";
                             user_img = ApiClient.getUrl(user_img);
@@ -245,7 +245,7 @@ export default function (view, params) {
                         var item_link = "<a href='" + name_link + "' is='emby-linkbutton' class='button-link' title='View Emby item'>" + item_details.item_name + "</a>";
 
                         var direct_name_link = "/web/index.html#!/item?id=" + item_details.item_id + "&serverId=" + ApiClient._serverInfo.Id;
-                        var new_window = "<i class='md-icon' style='cursor: pointer; font-size:100%;' onClick='window.open(\"" + direct_name_link + "\");' title='Open Emby item in new window'>launch</i>"
+                        var new_window = "<span class='material-icons' style='cursor: pointer; font-size:24px;' onClick='window.open(\"" + direct_name_link + "\");' title='Open item in new window'>launch</span>"
 
                         var item_name_link = item_link + "&nbsp;&nbsp;" + new_window;
                         row_html += "<td style='padding-left:15px;padding-right:15px;background:" + row_bg_col + ";'>" + item_name_link + "</td>";

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright(C) 2018
 
 This program is free software: you can redistribute it and/or modify
@@ -126,20 +126,20 @@ export default function (view, params) {
 
                         var summary_url = getConfigurationPageUrl('user_play_report') + "&user=" + encodeURI(user_info.user_name);
                         var summary_link = "<a is='emby-linkbutton' style='padding: 1px;' href='" + summary_url + "' title='Summary'>" +
-                            "<i class='md-icon largeIcon'>view_list</i></a>";
+                            "<span class='material-icons' style='font-size:24px;'>view_list</span></a>";
 
                         var breakdown_url = getConfigurationPageUrl('breakdown_report') + "&user=" + encodeURI(user_info.user_name);
                         var breakdown_link = "<a is='emby-linkbutton' style='padding: 1px;' href='" + breakdown_url + "' title='Breakdown'>" +
-                            "<i class='md-icon largeIcon'>pie_chart</i></a>";
+                            "<span class='material-icons' style='font-size:24px;'>pie_chart</span></a>";
                         
                         var time_url = getConfigurationPageUrl('hourly_usage_report') + "&user=" + encodeURI(user_info.user_name);
                         var time_link = "<a is='emby-linkbutton' style='padding: 1px;' href='" + time_url + "' title='Time'>" +
-                            "<i class='md-icon largeIcon'>access_time</i></a>";
+                            "<span class='material-icons' style='font-size:24px;'>access_time</span></a>";
 
                         row_html += "<td valign='middle' align='left' width='10' nowrap>" + summary_link + breakdown_link + time_link + "</td>";
                         
                         
-                        var user_image = "<i class='md-icon' style='font-size:30px;'></i>";                   
+                        var user_image = "<span class='material-icons' style='font-size:30px;width:30px;height:30px;'>person</span>";                   
                         if (user_info.has_image) {
                             var user_img = "Users/" + user_info.user_id + "/Images/Primary?height=152&&quality=90";
                             user_img = ApiClient.getUrl(user_img);
@@ -161,7 +161,7 @@ export default function (view, params) {
                         var item_link = "<a href='" + name_link + "' is='emby-linkbutton' class='button-link' title='View Emby item'>" + user_info.item_name + "</a>";
 
                         var direct_name_link = "/web/index.html#!/item?id=" + user_info.item_id + "&serverId=" + ApiClient._serverInfo.Id;
-                        var new_window = "<i class='md-icon' style='cursor: pointer; font-size:100%;' onClick='window.open(\"" + direct_name_link + "\");' title='Open Emby item in new window'>launch</i>"
+                        var new_window = "<span class='material-icons' style='cursor: pointer; font-size:24px;' onClick='window.open(\"" + direct_name_link + "\");' title='Open item in new window'>launch</span>"
 
                         var item_name_link = item_link + "&nbsp;&nbsp;" + new_window;
 

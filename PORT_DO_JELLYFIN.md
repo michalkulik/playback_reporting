@@ -243,6 +243,15 @@ które Jellyfin 12 **usunął**, a których używały oryginalne strony Emby:
 | `Dashboard.getConfigurationPageUrl()` | `TypeError` w callbacku pobierania → puste tabele | lokalny `getConfigurationPageUrl()` (już był w prelude) |
 | parametr `d3` z callbacku RequireJS | `ReferenceError: d3 is not defined` | `window.Chart` (funkcje rysujące i tak używają globalnego `Chart`) |
 | `data-require` (custom elements) | brak upgrade'u `emby-*` | nie blokuje działania (elementy natywne); do rozważenia kosmetycznie |
+| `md-icon` (czcionka ikon Emby) | zamiast ikon widać ligatury tekstowe (`view_list`, `pie_chart`, `access_time`) | klasa `material-icons` (Jellyfin używa `material-design-icons-iconfont`) |
+| glify z Private Use Area (np. `U+E7FD`) | placeholder awatara renderował się jako kwadrat | usunięte; awatar ma teraz ikonę `person` |
+| `app_icon` w `session_list` | `<img src=''>` = ikona zepsutego obrazka | Jellyfin nie udostępnia ikony klienta; wstawiana ikona `devices` |
+
+Szczegóły ikon: Jellyfin 12 nie ma klasy `md-icon` ani czcionki Emby, natomiast serwuje
+`@font-face` „Material Icons” i regułę `.material-icons { font-family: Material Icons }`
+(zweryfikowane w `main.jellyfin.*.css` / `1133.*.css` na działającym serwerze). Użyte nazwy
+to standardowe ligatury Material: `view_list`, `pie_chart`, `access_time`, `person`,
+`launch`, `delete`, `edit`, `remove`, `devices`, `check_circle_outline`, `highlight_off`.
 
 Dodatkowo usunięto martwy `helper_function.js` (nie ładowany przez nic; oficjalny port
 Jellyfin również go nie ma).

@@ -45,9 +45,12 @@
                 return [{ user_id: 'b', user_name: 'admin', user_usage: { '2026-09-18': 1 } }];
             }
             if (/UserPlaylist/.test(url)) {
-                return [];
+                return [{ user_id: 'b', user_name: 'admin', user_has_image: false, date: '2026-09-18', name: 'Some Movie', type: 'Movie', duration: '60', item_id: 'i1' }];
             }
-            if (/get_item_path|get_item_stats|get_items|submit_custom_query/.test(url)) {
+            if (/get_item_stats/.test(url)) {
+                return [{ name: 'admin', played: 'True', play_count: '1', last_played: '', child_stats: '1/2', child_watched: 1, child_total: 2 }];
+            }
+            if (/get_item_path|get_items|submit_custom_query/.test(url)) {
                 return [];
             }
             return [];
