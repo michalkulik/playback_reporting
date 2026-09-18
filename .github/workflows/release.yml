@@ -36,11 +36,38 @@ jobs:
           ./build.sh net10.0
 
       - name: "Publish GitHub Release"
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: dist/*.zip
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          echo "Publishing release for tag: $TAG"
+          ls -l dist
+
+          # Create the release if it does not exist yet. Idempotent, so re-runs work.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          fi
+
+          # Upload (or replace) the packages. The asset upload endpoint is
+          # occasionally flaky, so retry a few times before giving up.
+          attempt=1
+          while true; do
+            if gh release upload "$TAG" dist/*.zip --clobber; then
+              break
+            fi
+            if [ "$attempt" -ge 5 ]; then
+              echo "::error::Failed to upload release assets after $attempt attempts"
+              exit 1
+            fi
+            echo "Asset upload failed (attempt $attempt), retrying in $((attempt * 5))s..."
+            sleep $((attempt * 5))
+            attempt=$((attempt + 1))
+          done
+
+          echo "Release assets:"
+          gh release view "$TAG" --json tagName,url,assets
 
       - name: "Update manifest.json"
         env:
