@@ -86,8 +86,20 @@ jobs:
           status=0
           for pkg in "${PACKAGES[@]}"; do
             name=$(basename "$pkg")
+
             if ! grep -qx "$name" <<< "$ASSETS"; then
               echo "::error::Asset $name is missing from the release"
+              status=1
+              continue
+            fi
+
+            # Verify the asset is actually downloadable without credentials,
+            # exactly how Jellyfin will fetch it from the manifest.
+            url="https://github.com/$REPO/releases/download/$TAG/$name"
+            code=$(curl -sSL -o /dev/null -w '%{http_code}' "$url")
+            echo "download check: $name -> HTTP $code"
+            if [ "$code" != "200" ]; then
+              echo "::error::Asset $name is not downloadable (HTTP $code) at $url"
               status=1
             fi
           done
