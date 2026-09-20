@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Playback Reporting layout harness</title>
+
+    <!-- Real, served Jellyfin stylesheet: contains .type-interior > div[data-role=content]
+         { overflow: hidden } which clips overflowing report tables. -->
+    <link rel="stylesheet" href="__MAIN_CSS__">
+</head>
+<body>
+    <div id="host"></div>
+    <script>
+        window.__errors = [];
+        window.__calls = [];
+
+        window.addEventListener('error', function (e) { window.__errors.push('error: ' + e.message); });
+        window.addEventListener('unhandledrejection', function (e) {
+            window.__errors.push('rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+        });
+
+        function jsonFor(url) {
+            if (url.indexOf('session_list') > -1) {
+                return [{ user_id: 'a', user_name: 'michal', device_name: 'Living Room TV', client_name: 'Chrome', app_version: '152.0', has_image: false }];
+            }
+            if (url.indexOf('type_filter_list') > -1) {
+                return ['Movie', 'Episode', 'Audio', 'Series', 'Video'];
+            }
+            if (url.indexOf('user_list') > -1) {
+                return [{ name: 'administrator', id: 'b', in_list: false }];
+            }
+            if (url.indexOf('user_activity') > -1) {
+                // Several long-named users so the table is genuinely wider than a phone.
+                return [
+                    { user_id: 'b', user_name: 'administrator', last_seen: '2d 3h', total_play_time: '12h 4m', has_image: false },
+                    { user_id: 'c', user_name: 'michal-kulik-living-room', last_seen: '5h 12m', total_play_time: '3h', has_image: false },
+                    { user_id: 'd', user_name: 'guest-tablet-bedroom', last_seen: 'just now', total_play_time: '48m', has_image: false }
+                ];
+            }
+            if (/GetItems/.test(url)) {
+                return { has_image: false, user_name: 'administrator', user_id: 'b', activity: [] };
+            }
+            if (/BreakdownReport/.test(url)) {
+                return [{ label: 'A rather long item type label', value: 3, time: 3600 }];
+            }
+            if (/HourlyReport/.test(url)) {
+                return {};
+            }
+            if (/PlayActivity/.test(url)) {
+                return [{ user_id: 'b', user_name: 'administrator', user_usage: { '2026-09-18': 1, '2026-09-19': 2 } }];
+            }
+            if (/UserPlaylist/.test(url)) {
+                return [{ user_id: 'b', user_name: 'administrator', user_has_image: false, date: '2026-09-18', name: 'A reasonably long movie title', type: 'Movie', duration: '3720', item_id: 'i1' }];
+            }
+            return [];
+        }
+
+        function pluginConfig() {
+            return { MaxDataAge: 3, BackupPath: '', MaxBackupFiles: 5, ActivityPlaylists: [], ColourPalette: [], CustomQueries: [], IgnoreSmallerThan: 0 };
+        }
+
+        window.ApiClient = {
+            _serverInfo: { Id: 'srv' },
+            getUrl: function (path) { return '/' + path; },
+            ajax: function (opts) {
+                var url = (opts && opts.url) || '';
+                window.__calls.push(url);
+                return Promise.resolve(jsonFor(url));
+            },
+            getNamedConfiguration: function () { return Promise.resolve(pluginConfig()); },
+            updateNamedConfiguration: function () { return Promise.resolve(); }
+        };
+
+        window.Dashboard = {
+            getConfigurationResourceUrl: function (name) { return '/chart.min.js'; },
+            getPluginUrl: function (name) { return 'configurationpage?name=' + encodeURIComponent(name); },
+            navigate: function () { }, showLoadingMsg: function () { }, hideLoadingMsg: function () { },
+            processPluginConfigurationUpdateResult: function () { }, alert: function () { }, confirm: function () { }
+        };
+
+        window.LibraryMenu = { setTabs: function () { } };
+        // No RequireJS on purpose, matching Jellyfin 12.
+
+        window.__runPage = function (name) {
+            return fetch(name + '.html')
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
+                    document.getElementById('host').appendChild(document.importNode(doc.body.firstElementChild, true));
+                    var viewEl = document.getElementById('host').firstElementChild;
+                    return import('./' + name + '.js').then(function (mod) {
+                        var factory = mod.default || mod;
+                        factory(viewEl, {});
+                        viewEl.dispatchEvent(new Event('viewshow'));
+                    });
+                })
+                .catch(function (e) { window.__errors.push('load: ' + (e && e.message ? e.message : e)); });
+        };
+
+        // Reports, for every ancestor of the given element, whether it clips the content
+        // and whether it can be scrolled horizontally.
+        window.__measureOverflow = function (selector) {
+            var el = document.querySelector(selector);
+            if (!el) { return { error: 'not found: ' + selector }; }
+            var out = { viewport: window.innerWidth, path: [] };
+            var node = el;
+            while (node && node !== document.documentElement) {
+                var cs = getComputedStyle(node);
+                var entry = {
+                    node: node.tagName.toLowerCase() + (node.id ? '#' + node.id : '') + (node.className ? '.' + String(node.className).trim().split(/\s+/).join('.') : ''),
+                    clientWidth: node.clientWidth,
+                    scrollWidth: node.scrollWidth,
+                    offsetWidth: node.offsetWidth,
+                    overflowX: cs.overflowX,
+                    overflowY: cs.overflowY
+                };
+                // can it actually be scrolled horizontally?
+                if (node.scrollWidth > node.clientWidth) {
+                    node.scrollLeft = 9999;
+                    entry.maxScrollLeft = node.scrollLeft;
+                    node.scrollLeft = 0;
+                } else {
+                    entry.maxScrollLeft = 0;
+                }
+                out.path.push(entry);
+                node = node.parentElement;
+            }
+            var table = el.querySelector('table');
+            if (table) {
+                out.table = { clientWidth: table.clientWidth, scrollWidth: table.scrollWidth };
+            }
+            out.lastColumnRight = null;
+            var cells = el.querySelectorAll('tbody tr:first-child > td');
+            if (cells.length) {
+                out.lastColumnRight = Math.round(cells[cells.length - 1].getBoundingClientRect().right);
+            }
+            return out;
+        };
+
+        // Per-table horizontal scrollers added by the plugin pages (fixPageLayout).
+        window.__measureTables = function () {
+            var wraps = Array.prototype.slice.call(document.querySelectorAll('.pr-table-scroll'));
+            return {
+                viewport: window.innerWidth,
+                scrollContainers: wraps.length,
+                tables: wraps.map(function (w) {
+                    w.scrollLeft = 9999;
+                    var maxScrollLeft = w.scrollLeft;
+                    w.scrollLeft = 0;
+                    var rows = w.querySelectorAll('tbody tr');
+                    var lastCellRight = null;
+                    if (rows.length && rows[0].children.length) {
+                        w.scrollLeft = 99999;
+                        lastCellRight = Math.round(rows[0].children[rows[0].children.length - 1].getBoundingClientRect().right);
+                        w.scrollLeft = 0;
+                    }
+                    return {
+                        clientWidth: w.clientWidth,
+                        scrollWidth: w.scrollWidth,
+                        maxScrollLeft: maxScrollLeft,
+                        verticallyClipped: w.scrollHeight > w.clientHeight + 1,
+                        lastCellVisibleWhenScrolledRight: lastCellRight == null ? null : lastCellRight <= window.innerWidth + 1
+                    };
+                })
+            };
+        };
+    </script>
+</body>
+</html>

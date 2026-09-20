@@ -46,25 +46,54 @@ function getTabIndex(tab_name) {
     return -1;
 }
 
-// Jellyfin renders the section tabs into the shared header and upgrades them with the
-// legacy CustomElements polyfill. Not every client provides it (notably the mobile
-// wrapper), and when the upgrade does not happen the strip overflows without scrolling
-// and the layout class stays off. Restore both with the very fallback Jellyfin uses for
-// a tab strip its own scroller cannot handle.
-function fixTabsBar() {
+// Two Jellyfin 12 layout problems are fixed here, both of which only show up on narrow
+// screens (phones and the mobile app):
+//   1. The report tables are wider than the screen. Jellyfin's plugin page wrapper uses
+//      overflow:hidden and cannot scroll, so the last columns were clipped away with no
+//      way to reach them.
+//   2. The section tab strip in the shared header is scrolled by a scroller whose
+//      element is only upgraded by the legacy CustomElements polyfill, which the mobile
+//      wrapper does not always provide, leaving the strip clipped and unscrollable.
+function fixPageLayout(view) {
     var attempts = 0;
-    var style_id = 'playback-reporting-tabs-style';
+    var style_id = 'playback-reporting-style';
 
     if (!document.getElementById(style_id)) {
         var style = document.createElement('style');
         style.id = style_id;
         style.textContent =
+            // Report tables get their own horizontal scroller (see makeTablesScrollable).
+            '.pr-table-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}' +
             '.headerTabs .tabs-viewmenubar{max-width:100%;}' +
             '@media all and (max-width:40em){' +
             '.headerTabs .emby-tab-button{padding:1.1em .75em;font-size:92%;}' +
             '}';
         document.head.appendChild(style);
     }
+
+    // The report tables are wider than a phone screen, and Jellyfin's plugin page wrapper
+    // (type-interior > div[data-role=content]) is overflow:hidden and cannot scroll, so the
+    // last columns were clipped away with no way to reach them. Give every table its own
+    // horizontal scroller. The wrapper keeps height:auto, so nothing is clipped vertically
+    // and the page keeps scrolling exactly as before (setting the overflow on
+    // .content-primary instead turned it into a nested vertical scroller).
+    function makeTablesScrollable() {
+        var scope = view || document;
+        var tables = scope.querySelectorAll('.content-primary table');
+        for (var i = 0; i < tables.length; i++) {
+            var table = tables[i];
+            var parent = table.parentNode;
+            if (!parent || (parent.classList && parent.classList.contains('pr-table-scroll'))) {
+                continue;
+            }
+            var wrapper = document.createElement('div');
+            wrapper.className = 'pr-table-scroll';
+            parent.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        }
+    }
+
+    makeTablesScrollable();
 
     function apply() {
         var tabs_elem = document.querySelector('.tabs-viewmenubar');
@@ -99,9 +128,9 @@ function fixTabsBar() {
     apply();
 }
 
-function setPageTabs(page_name) {
+function setPageTabs(page_name, view) {
     LibraryMenu.setTabs(page_name, getTabIndex(page_name), getTabs);
-    fixTabsBar();
+    fixPageLayout(view);
 }
 
 if (!Date.prototype.toDateInputValue) {
@@ -145,7 +174,7 @@ export default function (view, params) {
         // init code here
         view.addEventListener('viewshow', function (e) {
 
-            setPageTabs("activity_report");
+            setPageTabs("activity_report", view);
 
             var style = document.createElement('style');
             style.innerHTML =

@@ -233,3 +233,5 @@ dist/
 tools/page-harness/_generated/
 
 tools/tab-harness/_generated/
+
+tools/layout-harness/_generated/

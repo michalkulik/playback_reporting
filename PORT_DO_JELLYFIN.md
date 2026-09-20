@@ -261,7 +261,6 @@ przeglądarce z zaślepkami globali Jellyfin. Wynik dla wszystkich 9 stron:
 **0 błędów**, poprawne wywołania API, `Chart` załadowany tam, gdzie potrzebny,
 statusy „Loading Data...” czyszczone.
 ### 9.2. Pasek zakładek na urządzeniach mobilnych (wersja 3.0.0.4)
-
 Wtyczka ma **9 zakładek**, które w wersji mobilnej (szczególnie w aplikacji będącej
 wrapperem WebView) nie mieściły się na ekranie i nie dawały się przewinąć w poziomie.
 
@@ -300,7 +299,45 @@ wąskie ekrany, więc przewijania potrzeba znacznie mniej.
 Weryfikacja: `tools/tab-harness` (prawdziwy CSS z serwera, brak polyfillu —
 odwzorowanie mobile wrappera) oraz `tools/page-harness` (brak regresji funkcjonalnej:
 9/9 stron, 0 błądów).
-Do zrobienia po stronie użytkownika / dalsze kroki:
+### 9.3. Tabele raportów ucinane na wąskich ekranach (wersja 3.0.0.5)
+
+Objaw zgłoszony po 3.0.0.4: na telefonie i w aplikacji mobilnej **nie dało się
+przewinąć tabeli w poziomie**, więc nie było widać skrajnych kolumn (np. „Time”
+w Users albo „Plays”/„Client”).
+
+Przyczyna (zmierzona w `tools/layout-harness` z prawdziwym CSS i prawdziwym
+znacznikiem stron): tabele raportów są szersze niż ekran (np. Users: 1032 px treści
+w 360 px okna, ostatnia kolumna kończy się na 878 px), a **`body` ma
+`overflow-x: hidden`**, więc nadmiar jest przycinany. Dodatkowo opakowanie strony
+wtyczki (`.type-interior > div[data-role=content]`) ma `overflow: hidden`. Żaden
+przodek nie przewijał się w poziomie (`maxScrollLeft = 0`).
+
+Pierwsza próba — `overflow-x: auto` na `.content-primary` — dawała przewijanie
+(672 px), ale **przy stałej wysokości tworzyła zagnieżdżony pionowy suwak**
+(zmierzone: `scrollHeight` 2833 vs `clientHeight` 727), czyli zmieniała sposób
+pionowego przewijania strony. Odrzucona.
+
+Poprawka (`fixPageLayout(view)` → `makeTablesScrollable()`): każda tabela w
+`.content-primary` dostaje własne opakowanie `.pr-table-scroll` z
+`overflow-x: auto; overflow-y: hidden`. Wysokość opakowania jest `auto`, więc nic
+nie jest ucinane w pionie i strona przewija się jak dotąd; poziomo przewija się
+sama tabela. Opakowanie jest idempotentne (nie zawija dwa razy).
+
+Wyniki pomiarów dla 360×740 (`viewport → maksymalne przewinięcie tabeli,
+ostatnia kolumna osiagalna, zagnieżdżony suwak pionowy`):
+
+| Strona | Przed | Po |
+| --- | --- | --- |
+| Users | 0; ostatnia kolumna na 878 px; brak przewijania | 672 px; ostatnia kolumna widoczna; brak zagnieżdżenia |
+| Summary | 0 | 564 px; ostatnia kolumna widoczna |
+| Playback | 0 | 192 px; widoczna |
+| Breakdown | 0 | 369/401 px; widoczna |
+| Time | 0 | 204 px; widoczna |
+| Active | 0 | 235 px; widoczna |
+| Played | 0 | 127 px; widoczna |
+
+Na 1280×800 nic się nie zmienia (0 przesunięć, 0 przycięć w pionie, brak
+niepotrzebnego przewijania). Wszystkie 9 stron: 0 błądów w harnessie.Do zrobienia po stronie użytkownika / dalsze kroki:
 1. Testy runtime na serwerze Jellyfin 12.x (ładowanie wtyczki, zakładka w kokpicie, wszystkie raporty).
 2. Utworzenie repo GitHub `michalkulik/playback_reporting`, push i tag `v3.0.0.0` → workflow opublikuje
    wydanie i wpisze checksumy do `manifest.json`.
