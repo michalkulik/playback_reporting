@@ -46,6 +46,64 @@ function getTabIndex(tab_name) {
     return -1;
 }
 
+// Jellyfin renders the section tabs into the shared header and upgrades them with the
+// legacy CustomElements polyfill. Not every client provides it (notably the mobile
+// wrapper), and when the upgrade does not happen the strip overflows without scrolling
+// and the layout class stays off. Restore both with the very fallback Jellyfin uses for
+// a tab strip its own scroller cannot handle.
+function fixTabsBar() {
+    var attempts = 0;
+    var style_id = 'playback-reporting-tabs-style';
+
+    if (!document.getElementById(style_id)) {
+        var style = document.createElement('style');
+        style.id = style_id;
+        style.textContent =
+            '.headerTabs .tabs-viewmenubar{max-width:100%;}' +
+            '@media all and (max-width:40em){' +
+            '.headerTabs .emby-tab-button{padding:1.1em .75em;font-size:92%;}' +
+            '}';
+        document.head.appendChild(style);
+    }
+
+    function apply() {
+        var tabs_elem = document.querySelector('.tabs-viewmenubar');
+        if (!tabs_elem) {
+            if (attempts++ < 20) {
+                window.setTimeout(apply, 100);
+            }
+            return;
+        }
+
+        // Native horizontal scrolling for the strip. The overflowing content is the row of
+        // tab buttons inside .emby-tabs-slider, so the scrolling element has to be that
+        // slider; putting the overflow on the outer emby-tabs element does not scroll.
+        // These are Jellyfin's own classes, used for exactly this purpose when its scroller
+        // is unavailable, and they are also applied on narrow layouts where the header
+        // strip is too cramped for the scroller's drag affordance.
+        var narrow = window.matchMedia('(max-width: 60em)').matches;
+        if (!tabs_elem.scroller || narrow) {
+            var slider = tabs_elem.querySelector('.emby-tabs-slider') || tabs_elem;
+            // No smoothScrollX: scroll-behavior:smooth stops the strip from scrolling
+            // programmatically, and this strip is scrolled by Jellyfin's own scroller.
+            slider.classList.add('scrollX', 'hiddenScrollX');
+        }
+
+        if (tabs_elem.parentNode) {
+            tabs_elem.parentNode.classList.remove('hide');
+        }
+
+        document.body.classList.add('withSectionTabs');
+    }
+
+    apply();
+}
+
+function setPageTabs(page_name) {
+    LibraryMenu.setTabs(page_name, getTabIndex(page_name), getTabs);
+    fixTabsBar();
+}
+
 if (!Date.prototype.toDateInputValue) {
     Date.prototype.toDateInputValue = function () {
         var local = new Date(this);
@@ -87,7 +145,7 @@ export default function (view, params) {
         // init code here
         view.addEventListener('viewshow', function (e) {
 
-            LibraryMenu.setTabs("activity_report", getTabIndex("activity_report"), getTabs);
+            setPageTabs("activity_report");
 
             var style = document.createElement('style');
             style.innerHTML =

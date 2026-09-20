@@ -260,7 +260,46 @@ Weryfikacja: `tools/page-harness` — harness uruchamia każdą stronę w prawdz
 przeglądarce z zaślepkami globali Jellyfin. Wynik dla wszystkich 9 stron:
 **0 błędów**, poprawne wywołania API, `Chart` załadowany tam, gdzie potrzebny,
 statusy „Loading Data...” czyszczone.
+### 9.2. Pasek zakładek na urządzeniach mobilnych (wersja 3.0.0.4)
 
+Wtyczka ma **9 zakładek**, które w wersji mobilnej (szczególnie w aplikacji będącej
+wrapperem WebView) nie mieściły się na ekranie i nie dawały się przewinąć w poziomie.
+
+Przyczyna: zakładki renderuje wspólny nagłówek Jellyfin (`.headerTabs.sectionTabs` →
+`emby-tabs` → `.emby-tabs-slider`), a jego przewijanie obsługuje
+`ScrollerFactory` tworzony w `EmbyTabs.attachedCallback`. Element `emby-tabs` jest
+uaktualniany przez polyfill `CustomElements` (`window.CustomElements.upgradeSubtree`
+w `maintabsmanager.js`); gdy polyfill nie zadziała, scroller nigdy nie powstaje
+i pasek jest tylko przycięty. Jellyfin ma wprawdzie własny fallback natywnego
+przewijania (klasy `scrollX hiddenScrollX smoothScrollX`), ale **stosuje go wyłącznie
+gdy brakuje `.emby-tabs-slider`** — a ten suwak jest zawsze obecny.
+
+Co ważne (zmierzone w `tools/tab-harness` na prawdziwym CSS Jellyfin 12): dodanie
+klas na zewnętrznym `emby-tabs` **nie przewija**, bo zawartość (rząd przycisków)
+przelewa się wewnątrz `.emby-tabs-slider`. Trzeba je dodać na tym suwaku.
+Dodatkowo `smoothScrollX` (`scroll-behavior:smooth`) uniemożliwia programowe
+przewijanie, więc go nie dodajemy.
+
+Poprawka (w `fixTabsBar()`, wspólnej dla wszystkich 9 stron):
+- `scrollX hiddenScrollX` na `.emby-tabs-slider` — natywne przewijanie poziome
+  z ukrytym paskiem, gdy brak scroller'a lub gdy układ jest wąski (`max-width: 60em`),
+- wymuszony `withSectionTabs` i zdjęcie `hide` z kontenera zakładek,
+- styl na wąskie ekrany: mniejszy `padding`/`font-size` przycisków zakładek.
+
+Wynik pomiarów (viewport → maksymalne przewinięcie / prawa krawędź 9. zakładki):
+
+| Viewport | Przed | Po |
+| --- | --- | --- |
+| 360×640 | przewinięcie 0; ostatnia zakładka na 824 px (poza ekranem) | przewinięcie 464 px (= maksimum); ostatnia zakładka na 360 px |
+| 414×896 | przewinięcie 0; ostatnia zakładka na 824 px | przewinięcie 410 px; ostatnia zakładka na 414 px |
+| 1280×800 | brak nadmiaru | bez zmian (brak nadmiaru, brak podwójnego przewijania) |
+
+Szerokość zawartości paska na telefonie spada z 824 px do 594 px dzięki regule na
+wąskie ekrany, więc przewijania potrzeba znacznie mniej.
+
+Weryfikacja: `tools/tab-harness` (prawdziwy CSS z serwera, brak polyfillu —
+odwzorowanie mobile wrappera) oraz `tools/page-harness` (brak regresji funkcjonalnej:
+9/9 stron, 0 błądów).
 Do zrobienia po stronie użytkownika / dalsze kroki:
 1. Testy runtime na serwerze Jellyfin 12.x (ładowanie wtyczki, zakładka w kokpicie, wszystkie raporty).
 2. Utworzenie repo GitHub `michalkulik/playback_reporting`, push i tag `v3.0.0.0` → workflow opublikuje

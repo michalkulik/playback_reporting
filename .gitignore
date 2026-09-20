@@ -231,3 +231,5 @@ dist/
 *.zip
 
 tools/page-harness/_generated/
+
+tools/tab-harness/_generated/

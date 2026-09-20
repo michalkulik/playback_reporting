@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Playback Reporting tab strip harness</title>
+
+    <!-- The real, served Jellyfin 12 stylesheet (contains .sectionTabs, .headerTabs and
+         the .scrollX / .hiddenScrollX / .smoothScrollX scroll helpers). -->
+    <link rel="stylesheet" href="main.jellyfin.62ea10d695d4592fccae.css">
+
+    <!-- The .emby-tab-button rules are injected at runtime by the emby-tabs chunk
+         (webpack style-loader), so they are not in the static CSS. Mirrored here from
+         src/elements/emby-tabs/emby-tabs.scss. -->
+    <style>
+        .emby-tab-button {
+            box-sizing: border-box;
+            background: transparent;
+            cursor: pointer;
+            width: auto;
+            font-family: inherit;
+            font-size: inherit;
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+            margin: 0;
+            padding: 1.5em 1.5em;
+            position: relative;
+            height: auto;
+            min-width: initial;
+            line-height: 1.25;
+            border-radius: 0;
+            font-weight: 600;
+        }
+
+        body { margin: 0; font-family: sans-serif; }
+        .harness-note { padding: 8px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="harness-note" id="note">no fix applied</div>
+
+    <div class="skinHeader">
+        <div class="flex align-items-center flex-grow headerTop">
+            <div class="headerLeft"><h3 class="pageTitle">Playback Reporting</h3></div>
+        </div>
+        <div class="headerTabs sectionTabs">
+            <div is="emby-tabs" class="tabs-viewmenubar">
+                <div class="emby-tabs-slider" style="white-space:nowrap;">
+                    <a href="#" class="emby-tab-button">Active</a>
+                    <a href="#" class="emby-tab-button">Playback</a>
+                    <a href="#" class="emby-tab-button">Users</a>
+                    <a href="#" class="emby-tab-button">Summary</a>
+                    <a href="#" class="emby-tab-button">Breakdown</a>
+                    <a href="#" class="emby-tab-button">Time</a>
+                    <a href="#" class="emby-tab-button">Played</a>
+                    <a href="#" class="emby-tab-button">Query</a>
+                    <a href="#" class="emby-tab-button">Settings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // NOTE: no CustomElements polyfill here on purpose. That mirrors the mobile wrapper
+        // where the emby-tabs element never gets upgraded, so Jellyfin's own scroller is
+        // never created and the strip has no way to scroll.
+        window.__measure = function () {
+            const host = document.querySelector('.tabs-viewmenubar');
+            const slider = document.querySelector('.emby-tabs-slider');
+            const headerTabs = document.querySelector('.headerTabs');
+            const style = getComputedStyle(host);
+            return {
+                viewport: window.innerWidth,
+                headerTabsWidth: Math.round(headerTabs.getBoundingClientRect().width),
+                hostClientWidth: host.clientWidth,
+                contentWidth: Math.round(slider.getBoundingClientRect().width),
+                overflowX: style.overflowX,
+                scrollable: host.scrollWidth > host.clientWidth + 1,
+                hasScroller: !!host.scroller,
+                classes: host.className,
+                clipped: Math.round(slider.getBoundingClientRect().width) > Math.round(headerTabs.getBoundingClientRect().width) + 1
+            };
+        };
+
+        // Exactly what the plugin pages now do in fixTabsBar().
+        window.__applyFix = function () {
+            const host = document.querySelector('.tabs-viewmenubar');
+            const narrow = window.matchMedia('(max-width: 60em)').matches;
+            if (!host.scroller || narrow) {
+                const slider = host.querySelector('.emby-tabs-slider') || host;
+                // No smoothScrollX: scroll-behavior:smooth stops programmatic scrolling.
+                slider.classList.add('scrollX', 'hiddenScrollX');
+            }
+            document.getElementById('note').textContent = 'fix applied (narrow=' + narrow + ')';
+        };
+
+        // Can the strip actually be scrolled, and how far?
+        window.__canScroll = function () {
+            const slider = document.querySelector('.emby-tabs-slider');
+            slider.scrollLeft = 9999;
+            const reached = slider.scrollLeft;
+            slider.scrollLeft = 0;
+            return reached;
+        };
+    </script>
+</body>
+</html>
