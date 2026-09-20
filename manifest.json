@@ -8,6 +8,22 @@
     "category": "Administration",
     "versions": [
       {
+        "version": "3.0.0.4",
+        "changelog": "Jellyfin 10.11 and 12 support",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/michalkulik/playback_reporting/releases/download/v3.0.0.4/playback_reporting_3.0.0.4-net9.0.zip",
+        "checksum": "0ddc234df26afb9fefd5b24b6b936d75",
+        "timestamp": "2026-09-20T13:14:11.0000000Z"
+      },
+      {
+        "version": "3.0.0.4",
+        "changelog": "Jellyfin 10.11 and 12 support",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/michalkulik/playback_reporting/releases/download/v3.0.0.4/playback_reporting_3.0.0.4-net10.0.zip",
+        "checksum": "12e67b69dda6f9628c763942b1680a68",
+        "timestamp": "2026-09-20T13:14:11.0000000Z"
+      },
+      {
         "version": "3.0.0.3",
         "changelog": "Jellyfin 10.11 and 12 support",
         "targetAbi": "10.11.0.0",
